@@ -192,11 +192,13 @@ module Kashi
           end
         end
       else
-        FileUtils.mkdir_p(base_dir)
-        Kashi.logger.info("Export #{path}")
-        open(path, 'wb') do |f|
-          f.puts MAGIC_COMMENT
-          f.puts dsls.join("\n")
+        Converter.new(tests_by_id, contact_groups_by_id).convert do |dsl|
+          FileUtils.mkdir_p(base_dir)
+          Kashi.logger.info("Export #{path}")
+          open(path, 'wb') do |f|
+            f.puts MAGIC_COMMENT
+            f.puts dsl
+          end
         end
       end
     end
