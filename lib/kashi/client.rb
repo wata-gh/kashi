@@ -17,60 +17,85 @@ module Kashi
     end
 
     def traverse_contact_groups(dsl_contact_groups, sc_contact_groups_by_id, sc_contact_groups_by_name)
-      dsl_contact_groups_by_name = dsl_contact_groups.group_by(&:group_name).each_with_object({}) do |(k, v), h|
-        h[k] = v.first
-      end
-
-      dsl_contact_groups_by_id = dsl_contact_groups.group_by(&:contact_id).each_with_object({}) do |(k, v), h|
-        h[k] = v.first
-      end
+      dsl_contact_groups_by_name = dsl_contact_groups.group_by(&:group_name)
+      dsl_contact_groups_by_id = dsl_contact_groups.group_by(&:contact_id)
 
       # create
       dsl_contact_groups_by_name.reject { |n| sc_contact_groups_by_name[n] }.each do |name, dsl_contact_group|
-        sc_contact_groups_by_name[name] = dsl_contact_group.create
+        sc_contact_groups_by_name[name] = dsl_contact_group.map(&:create)
       end
 
       # modify
-      dsl_contact_groups_by_name.each do |name, dsl_contact_group|
-        next unless sc_contact_group = sc_contact_groups_by_name.delete(name)
+      dsl_contact_groups_by_name.each do |name, dsl_contact_groups|
+        next unless sc_contact_groups = sc_contact_groups_by_name.delete(name)
 
-        dsl_contact_group.cake(sc_contact_group).modify
+        if dsl_contact_groups.length == 1 && sc_contact_groups.length == 1
+          next if sc_contact_groups[0]['Success'] # created contact group
+          dsl_contact_groups[0].cake(sc_contact_groups[0]).modify
+        else
+          dsl_contact_groups.each do |dsl_contact_group|
+            sc_contact_group = sc_contact_groups.find { |sc_cg| sc_cg['ContactID'] == dsl_contact_group.contact_id }
+            raise "contact_id must be set if same name contact group exist. `#{name}`" unless sc_contact_group
+            dsl_contact_group.cake(sc_contact_group).modify
+          end
+        end
       end
 
       # delete
-      sc_contact_groups_by_name.each do |name, sc_contact_group|
-        Kashi.logger.info("Delete ContactGroup `#{name}`")
-        next if @options[:dry_run]
-        client.contactgroups_update(method: :delete, ContactID: sc_contact_group['ContactID'])
+      sc_contact_groups_by_name.each do |name, sc_contact_groups|
+        sc_contact_groups.each do |sc_contact_group|
+          Kashi.logger.info("Delete ContactGroup `#{name}` #{sc_contact_group['ContactID']}")
+          next if @options[:dry_run]
+          client.contactgroups_update(method: :delete, ContactID: sc_contact_group['ContactID'])
+        end
       end
     end
 
     def traverse_tests(dsl_tests, sc_tests_by_id, sc_tests_by_name)
-      dsl_tests_by_name = dsl_tests.group_by(&:website_name).each_with_object({}) do |(k, v), h|
-        h[k] = v.first
-      end
-      dsl_tests_by_id = dsl_tests.group_by(&:test_id).each_with_object({}) do |(k, v), h|
-        h[k] = v.first
-      end
+      dsl_tests_by_name = dsl_tests.group_by(&:website_name)
+      dsl_tests_by_id = dsl_tests.group_by(&:test_id)
 
       # create
-      dsl_tests_by_name.reject { |n| sc_tests_by_name[n] }.each do |name, dsl_test|
-        sc_tests_by_name[name] = dsl_test.create
+      dsl_tests_by_name.reject { |n, _| sc_tests_by_name[n] }.each do |name, dsl_tests|
+        sc_tests_by_name[name] = dsl_tests.map do |dsl_test|
+          # if test_id exist, its name might been changed
+          if dsl_test.test_id
+            sc_test = sc_tests_by_id[dsl_test.test_id]
+            if sc_test
+              sc_tests_by_name[sc_test['WebsiteName']].delete_if { |sc_test| sc_test['TestID'] == dsl_test.test_id }
+              next sc_test
+            end
+            next
+          end
+          dsl_test.create
+        end
       end
 
       # modify
-      dsl_tests_by_name.each do |name, dsl_test|
-        next unless sc_test = sc_tests_by_name.delete(name)
+      dsl_tests_by_name.each do |name, dsl_tests|
+        next unless sc_tests = sc_tests_by_name.delete(name)
 
-        sc_test = client.tests_details(TestID: sc_test['TestID'])
-        dsl_test.cake(sc_test).modify
+        if dsl_tests.length == 1 && sc_tests.length == 1
+          next if sc_tests[0]['Success'] # created test
+          sc_test = client.tests_details(TestID: sc_tests[0]['TestID'])
+          dsl_tests[0].cake(sc_test).modify
+        else
+          dsl_tests.each do |dsl_test|
+            sc_test = sc_tests.find { |sc_t| sc_t['TestID'] == dsl_test.test_id }
+            raise "test_id must be set if same name test exist. `#{name}`" unless sc_test
+            sc_test = client.tests_details(TestID: sc_test['TestID'])
+            dsl_test.cake(sc_test).modify
+          end
+        end
       end
 
       # delete
-      sc_tests_by_name.each do |name, sc_test|
-        Kashi.logger.info("Delete Test `#{name}`")
-        next if @options[:dry_run]
-        client.tests_details(method: :delete, TestID: sc_test['TestID'])
+      sc_tests_by_name.each do |name, sc_tests|
+        sc_tests.each do |sc_test|
+          Kashi.logger.info("Delete Test `#{name}` #{sc_test['TestID']}")
+          next if @options[:dry_run]
+          client.tests_details(method: :delete, TestID: sc_test['TestID'])
+        end
       end
     end
 
@@ -78,18 +103,20 @@ module Kashi
       Kashi.logger.info("Applying...")
       dsl = load_file(@filepath)
 
-      sc_contact_groups_by_id = client.contactgroups.each_with_object({}) do |contact_group, h|
+      sc_contact_groups = client.contactgroups
+      sc_contact_groups_by_id = sc_contact_groups.each_with_object({}) do |contact_group, h|
         h[contact_group['ContactID']] = contact_group
       end
-      sc_contact_groups_by_name = sc_contact_groups_by_id.each_with_object({}) do |(contact_id, contact_group), h|
-        h[contact_group['GroupName']] = contact_group
+      sc_contact_groups_by_name = sc_contact_groups.group_by do |contact_group|
+        contact_group['GroupName']
       end
 
-      sc_tests_by_id = client.tests.each_with_object({}) do |test, h|
+      sc_tests = client.tests
+      sc_tests_by_id = sc_tests.each_with_object({}) do |test, h|
         h[test['TestID']] = test
       end
-      sc_tests_by_name = sc_tests_by_id.each_with_object({}) do |(test_id, test), h|
-        h[test['WebsiteName']] = test
+      sc_tests_by_name = sc_tests.group_by do |sc_tests|
+        sc_tests['WebsiteName']
       end
 
       traverse_contact_groups(dsl.cake.contact_groups, sc_contact_groups_by_id, sc_contact_groups_by_name)
@@ -109,10 +136,8 @@ module Kashi
       # API access
       tests = client.tests(method: :get)
       tests_by_id = tests.each_with_object({}) do |test, hash|
-        hash[test['TestID']] = cache(test['TestID']) do
-          # API access
-          client.tests_details(TestID: test['TestID'])
-        end
+        # API access
+        hash[test['TestID']] = client.tests_details(TestID: test['TestID'])
       end
 
       path = Pathname.new(@filepath)
@@ -124,7 +149,7 @@ module Kashi
           Converter.new({}, { id => contact_group }).convert do |dsl|
             kashi_base_dir = base_dir.join('contact_groups')
             FileUtils.mkdir_p(kashi_base_dir)
-            sc_file = kashi_base_dir.join("#{contact_group['GroupName'].gsub(/ /, '_')}.cake")
+            sc_file = kashi_base_dir.join("#{contact_group['GroupName'].gsub(/[\/ ]/, '_')}_#{contact_group['ContactID']}.cake")
             Kashi.logger.info("Export #{sc_file}")
             open(sc_file, 'wb') do |f|
               f.puts MAGIC_COMMENT
@@ -138,7 +163,7 @@ module Kashi
           Converter.new({ id => test }, {}).convert do |dsl|
             kashi_base_dir = base_dir.join('tests')
             FileUtils.mkdir_p(kashi_base_dir)
-            sc_file = kashi_base_dir.join("#{test['WebsiteName'].gsub(/ /, '_')}.cake")
+            sc_file = kashi_base_dir.join("#{test['WebsiteName'].gsub(/[\/ ]/, '_')}_#{test['TestID']}.cake")
             Kashi.logger.info("Export #{sc_file}")
             open(sc_file, 'wb') do |f|
               f.puts MAGIC_COMMENT

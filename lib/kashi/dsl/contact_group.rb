@@ -38,7 +38,7 @@ module Kashi
         def create
           Kashi.logger.info("Create ContactGroup `#{group_name}`")
           Kashi.logger.debug(create_params)
-          return if @options[:dry_run]
+          return { 'Success' => true } if @options[:dry_run]
 
           client.contactgroups_update(create_params)
         end
@@ -69,7 +69,7 @@ module Kashi
 
         def modify
           return unless updated?
-          Kashi.logger.info("Modify ContactGroup `#{group_name}`")
+          Kashi.logger.info("Modify ContactGroup `#{group_name}` #{contact_id}")
           Kashi.logger.info("<diff>\n#{Kashi::Utils.diff(sc_hash, dsl_hash, color: @options[:color])}")
           Kashi.logger.debug(modify_params)
           return if @options[:dry_run]

@@ -16,7 +16,7 @@ module Kashi
 
     def initialize(filepath, options, &block)
       @filepath = filepath
-      @result = OpenStruct.new(cake: {})
+      @result = OpenStruct.new(cake: nil)
 
       @context = Hashie::Mash.new(
         filepath: filepath,
@@ -27,10 +27,10 @@ module Kashi
       instance_eval(&block)
     end
 
-    def require
+    def require(file)
       scfile = (file =~ %r|\A/|) ? file : File.expand_path(File.join(File.dirname(@filepath), file))
 
-      if FIle.exist?(scfile)
+      if File.exist?(scfile)
         instance_eval(File.read(scfile), scfile)
       elsif File.exist?("#{scfile}.rb")
         instance_eval(File.read("#{scfile}.rb"), "#{scfile}.rb")
@@ -44,7 +44,11 @@ module Kashi
     end
 
     def cake(&block)
-      @result.cake = Cake.new(@context, &block).result
+      if @result.cake
+        @result.cake = Cake.new(@context, @result.cake.tests, @result.cake.contact_groups, &block).result
+      else
+        @result.cake = Cake.new(@context, &block).result
+      end
     end
   end
 end

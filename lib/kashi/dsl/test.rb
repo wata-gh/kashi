@@ -51,7 +51,7 @@ module Kashi
         def create
           Kashi.logger.info("Create Test `#{website_name}`")
           Kashi.logger.debug(create_params)
-          return if @options[:dry_run]
+          return { 'Success' => true } if @options[:dry_run]
 
           client.tests_update(create_params)
         end
@@ -86,6 +86,11 @@ module Kashi
           end
           hash[:contact_group] = hash.delete(:contact_groups).map { |contact_group| contact_group['Name'] }
           hash[:test_tags] = Array(hash[:test_tags])
+          if hash[:custom_header] == false || hash[:custom_header] == ''
+            hash[:custom_header] = ''
+          else
+            hash[:custom_header] = JSON.parse(hash[:custom_header]).to_json
+          end
           Kashi::Utils.normalize_hash(hash)
         end
 
@@ -95,7 +100,7 @@ module Kashi
 
         def modify
           return unless updated?
-          Kashi.logger.info("Modify Test `#{website_name}`")
+          Kashi.logger.info("Modify Test `#{website_name}` #{test_id}")
           Kashi.logger.info("<diff>\n#{Kashi::Utils.diff(sc_hash, dsl_hash, color: @options[:color])}")
           Kashi.logger.debug(modify_params)
           return if @options[:dry_run]
