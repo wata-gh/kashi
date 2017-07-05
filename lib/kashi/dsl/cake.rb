@@ -7,10 +7,10 @@ module Kashi
     class Cake
       attr_reader :result
 
-      def initialize(context, &block)
+      def initialize(context, tests = [], contacts = [], &block)
         @context = context
 
-        @result = OpenStruct.new(tests: [], contact_groups: [])
+        @result = OpenStruct.new(tests: tests, contact_groups: contacts)
 
         @tests = []
         @contacts = []
