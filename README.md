@@ -67,38 +67,42 @@ cake do
   end
 
   test do
+    paused 0
+
+    test_type "HTTP"
+
+    # Required Details
     website_name "your awesome site"
     website_url "https://example.com/healthcheck"
 
-    paused 0
-    # HTTP,TCP,PING
-    test_type "HTTP"
     contact_group ["Alarm"]
-    check_rate 300
-    timeout 40
-    website_host ""
-    node_locations ["freeserver2"]
+
+    # Scans
+    enable_ssl_warning 1
+
+    # HTTP Communication Options
     find_string ""
     do_not_find 0
-    logo_image ""
-
+    follow_redirect 1
     custom_header(
       {"Host"=>"example.com"}
     )
+    status_codes ["204", "205", "206", "303", "400", "401", "403", "404", "405", "406", "408", "410", "413", "444", "429", "494", "495", "496", "499", "500", "501", "502", "503", "504", "505", "506", "507", "508", "509", "510", "511", "521", "522", "523", "524", "520", "598", "599", "302"]
+
+    logo_image ""
+
+    # Test Locations
+    node_locations ["freeserver11"]
+
+    # Threshold Control
+    trigger_rate "0"
     confirmation "2"
 
-    basic_user nil
-    basic_pass nil
-
-    use_jar nil
-
-    dns_ip ""
-    dns_server ""
-    trigger_rate "0"
+    # Additional Options
+    check_rate 300
+    timeout 40
     test_tags ["Web", "Internal"]
-    status_codes ["204", "205", "206", "303", "400", "401", "403", "404", "405", "406", "408", "410", "413", "444", "429", "494", "495", "496", "499", "500", "501", "502", "503", "504", "505", "506", "507", "508", "509", "510", "511", "521", "522", "523", "524", "520", "598", "599", "302"]
-    enable_ssl_warning 0
-    follow_redirect 1
+    website_host ""
   end
 end
 ```
