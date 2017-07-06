@@ -7,7 +7,7 @@ module Kashi
 
     def_delegators :@client, *%i/
       contactgroups contactgroups_update
-      tests tests_details
+      tests tests_details tests_update
     /
 
     def initialize(options)

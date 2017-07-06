@@ -7,7 +7,7 @@ cake do
     boxcar <%= contact_group['Boxcar'].inspect %>
     pushover <%= contact_group['Pushover'].inspect %>
     ping_url <%= contact_group['PingURL'].inspect %>
-    mobile <%= contact_group['Mobile'].inspect %>
+    mobile <%= contact_group['Mobiles'].inspect %>
   end
     <%- if contact_groups_by_id.keys.last != contact_id -%>
 
@@ -18,46 +18,69 @@ cake do
   <%- end -%>
   <%- tests_by_id.each do |test_id, test| -%>
   test <%= test_id.inspect %> do
+    paused <%= test['Paused'] ? 1 : 0 %>
+
+    test_type <%= test['TestType'].inspect %>
+
+    # Required Details
     website_name <%= test['WebsiteName'].inspect %>
     website_url <%= test['URI'].inspect %>
-
-    paused <%= test['Paused'] ? 1 : 0 %>
-    # HTTP,TCP,PING
-    test_type <%= test['TestType'].inspect %>
-    contact_group <%= test['ContactGroups'].map { |contact_group| contact_group['Name'] }.inspect %>
-    check_rate <%= test['CheckRate'].inspect %>
-    timeout <%= test['Timeout'].inspect %>
-    website_host <%= test['WebsiteHost'].inspect %>
-    node_locations <%= test['NodeLocations'].inspect %>
-    find_string <%= test['FindString'].inspect %>
-    do_not_find <%= test['DoNotFind'].inspect %>
-    logo_image <%= test['LogoImage'].inspect %>
-
     <%- if %w/SMTP SSH TCP/.include?(test['TestType']) -%>
     port <%= test['Port'].inspect %>
     <%- end -%>
-    # ping_url <%= test['PingURL'].inspect %>
+    <%- if test['TestType'] == 'DNS' -%>
+    dns_ip <%= test['DNSIP'].inspect %>
+    dns_server <%= test['DNSServer'].inspect %>
+    <%- end -%>
+    <%- if %w/HTTP HEAD SSH/.include?(test['TestType']) -%>
+    <%- if test['BasicUser'] -%>
+    basic_user <%= test['BasicUser'].inspect %>
+    <%- end -%>
+    <%- if test['BasicPass'] -%>
+    basic_pass <%= test['BasicPass'].inspect %>
+    <%- end -%>
+    <%- end -%>
+
+    contact_group <%= test['ContactGroups'].map { |contact_group| contact_group['Name'] }.inspect %>
+
+    <%- if %w/HTTP HEAD/.include?(test['TestType']) -%>
+    # Scans
+    enable_ssl_warning <%= test['EnableSSLWarning'] ? 1 : 0 %>
+    <%- if test['Virus'] -%>
+    virus 1
+    <%- end -%>
+
+    # HTTP Communication Options
+    find_string <%= test['FindString'].inspect %>
+    do_not_find <%= test['DoNotFind'] ? 1 : 0 %>
+    <%- if test['UseJar'] -%>
+    use_jar <%= test['UseJar'].inspect %>
+    <%- end -%>
+    follow_redirect <%= test['FollowRedirect'] ? 1 : 0 %>
     custom_header(
       <%= (test['CustomHeader'] == '' ? '' : JSON.parse(test['CustomHeader'])).inspect %>
     )
+    status_codes <%= test['StatusCodes'].inspect %>
+    <%- end -%>
+
+    logo_image <%= test['LogoImage'].inspect %>
+
+    <%- if test['NodeLocations'] -%>
+    # Test Locations
+    node_locations <%= test['NodeLocations'].inspect %>
+    <%- end -%>
+
+    # Threshold Control
+    trigger_rate <%= test['TriggerRate'].inspect %>
     confirmation <%= test['Confirmation'].inspect %>
 
-    basic_user <%= test['BasicUser'].inspect %>
-    basic_pass <%= test['BasicPass'].inspect %>
-
-    # public <%= test['Public'].inspect %>
-    use_jar <%= test['UseJar'].inspect %>
-    # branding <%= test['Branding'].inspect %>
-    # virus <%= test['Virus'].inspect %>
-
-    # real_browser <%= test['RealBrowser'].inspect %>
-    dns_server <%= test['DNSServer'].inspect %>
-    trigger_rate <%= test['TriggerRate'].inspect %>
+    # Additional Options
+    check_rate <%= test['CheckRate'].inspect %>
+    timeout <%= test['Timeout'].inspect %>
+    <%- if test['Tags'] -%>
     test_tags <%= test['Tags'].inspect %>
-    status_codes <%= test['StatusCodes'].inspect %>
-    enable_ssl_warning <%= test['EnableSSLWarning'] ? 1 : 0 %>
-    follow_redirect <%= test['FollowRedirect'] ? 1 : 0 %>
-    dns_ip <%= test['DNSIP'].inspect %>
+    <%- end -%>
+    website_host <%= test['WebsiteHost'].inspect %>
   end
     <%- if tests_by_id.keys.last != test_id -%>
 
