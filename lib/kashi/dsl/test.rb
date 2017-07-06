@@ -81,7 +81,7 @@ module Kashi
           %i/port use_jar virus/.each do |k|
             hash[k] = '' unless hash.key?(k)
           end
-          %i/paused enable_ssl_warning follow_redirect/.each do |k|
+          %i/paused enable_ssl_warning follow_redirect do_not_find/.each do |k|
             hash[k] = hash[k] ? 1 : 0
           end
           hash[:contact_group] = hash.delete(:contact_groups).map { |contact_group| contact_group['Name'] }
@@ -134,6 +134,10 @@ module Kashi
         @result.trigger_rate = 5
         @result.enable_ssl_warning = 1
         @result.follow_redirect = 1
+        @result.test_tags = []
+        @result.node_locations = ['']
+        @result.status_codes = []
+        @result.virus = ''
 
         instance_eval(&block)
       end
@@ -249,6 +253,9 @@ module Kashi
       end
 
       def test_tags(tags)
+        if tags == nil
+          @result.test_tags = []
+        end
         @result.test_tags = Array(tags)
       end
 

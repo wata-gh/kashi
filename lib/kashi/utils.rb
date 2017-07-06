@@ -1,4 +1,5 @@
 require 'diffy'
+require 'pp'
 
 module Kashi
   class Utils
@@ -6,6 +7,7 @@ module Kashi
       def normalize_hash(hash)
         hash.dup.each do |k, v|
           if v.kind_of?(Array)
+            v.sort!
             if v.first.kind_of?(Hash)
               hash[k] = v.map { |o| normalize_hash(o) }
             elsif v.first.respond_to?(:to_h)
