@@ -3,9 +3,11 @@ require 'kashi'
 require 'kashi/converter'
 require 'kashi/client_wrapper'
 require 'kashi/dsl'
+require 'kashi/filterable'
 
 module Kashi
   class Client
+    include Filterable
     MAGIC_COMMENT = <<-EOS
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
@@ -14,6 +16,7 @@ module Kashi
     def initialize(filepath, options = {})
       @filepath = filepath
       @options = options
+      @options[:secret_expander] = SecretExpander.new(@options[:secret_provider]) if @options[:secret_provider]
     end
 
     def traverse_contact_groups(dsl_contact_groups, sc_contact_groups_by_id, sc_contact_groups_by_name)
@@ -52,8 +55,9 @@ module Kashi
     end
 
     def traverse_tests(dsl_tests, sc_tests_by_id, sc_tests_by_name)
-      dsl_tests_by_name = dsl_tests.group_by(&:website_name)
-      dsl_tests_by_id = dsl_tests.group_by(&:test_id)
+      dsl_target_tests = dsl_tests.select { |t| target?(t.website_name) }
+      dsl_tests_by_name = dsl_target_tests.group_by(&:website_name)
+      dsl_tests_by_id = dsl_target_tests.group_by(&:test_id)
 
       # create
       dsl_tests_by_name.reject { |n, _| sc_tests_by_name[n] }.each do |name, dsl_tests|
