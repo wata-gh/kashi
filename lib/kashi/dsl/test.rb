@@ -105,7 +105,9 @@ module Kashi
         def modify
           return unless updated?
           Kashi.logger.info("Modify Test `#{website_name}` #{test_id}")
-          masked_dsl_has = dsl_hash.dup.tap { |h| h[:basic_pass] = '****' }
+          masked_dsl_has = dsl_hash.dup.tap do |h|
+            h[:basic_pass] = '****' if h[:basic_pass] != ''
+          end
           Kashi.logger.info("<diff>\n#{Kashi::Utils.diff(sc_hash, masked_dsl_has, color: @options[:color])}")
           Kashi.logger.debug(modify_params)
           return if @options[:dry_run]
