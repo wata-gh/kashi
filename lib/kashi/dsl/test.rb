@@ -1,4 +1,5 @@
 require 'ostruct'
+require 'kashi/secret_expander'
 
 module Kashi
   class DSL
@@ -8,17 +9,20 @@ module Kashi
           TestID Paused WebsiteName WebsiteURL Port NodeLocations Timeout CustomHeader Confirmation CheckRate
           DNSServer DNSIP BasicUser BasicPass LogoImage UseJar WebsiteHost Virus FindString DoNotFind
           TestType ContactGroup TriggerRate TestTags StatusCodes EnableSSLWarning FollowRedirect
+          PostRaw FinalEndpoint
         / # PingURL RealBrowser Public Branding
         ATTRIBUTES = %i/
           test_id paused website_name website_url port node_locations timeout custom_header confirmation check_rate
           dns_server dns_ip basic_user basic_pass logo_image use_jar website_host virus find_string do_not_find
           test_type contact_group trigger_rate test_tags status_codes enable_ssl_warning follow_redirect
+          post_raw final_endpoint
         / # ping_url real_browser public branding
         attr_accessor *ATTRIBUTES
 
         def initialize(context)
           @context = context
           @options = context.options
+          @options[:secret_expander] = SecretExpander.new(@options[:secret_provider]) if @options[:secret_provider]
         end
 
         def to_h
@@ -101,11 +105,21 @@ module Kashi
         def modify
           return unless updated?
           Kashi.logger.info("Modify Test `#{website_name}` #{test_id}")
-          Kashi.logger.info("<diff>\n#{Kashi::Utils.diff(sc_hash, dsl_hash, color: @options[:color])}")
+          masked_dsl_has = dsl_hash.dup.tap { |h| h[:basic_pass] = '****' }
+          Kashi.logger.info("<diff>\n#{Kashi::Utils.diff(sc_hash, masked_dsl_has, color: @options[:color])}")
           Kashi.logger.debug(modify_params)
           return if @options[:dry_run]
 
           client.tests_update(modify_params)
+        end
+
+        def basic_pass
+          secret_expander = @options[:secret_expander]
+          if secret_expander
+            secret_expander.expand(@basic_pass)
+          else
+            @basic_pass
+          end
         end
 
         def client
@@ -138,6 +152,10 @@ module Kashi
         @result.node_locations = ['']
         @result.status_codes = []
         @result.virus = ''
+
+        # not used
+        @result.post_raw = ''
+        @result.final_endpoint = ''
 
         instance_eval(&block)
       end

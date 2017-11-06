@@ -39,10 +39,14 @@ Usage: kashi [options]
     -n, --dry-run                    Dry run
         --no-color
                                      No color
+        --secret-provider NAME
+                                     use secret value expansion
     -s, --split                      Split export DLS file contact group and tests
         --split-more
                                      Split export DLS file to 1 per object
     -v, --debug                      Show debug log
+    -i, --include-names NAMES        include website_name
+    -x, --exclude-names NAMES        exclude website_name by regex
 ```
 
 ## SCfile
@@ -105,6 +109,16 @@ cake do
     website_host ""
   end
 end
+```
+
+## Secret provider
+
+If you don't want to commit your Basic authentication password, you can use SecretProvider.
+Use --secret-provider option to select provider.(e.g. --secret-provider=vault) Expression inside ${...} is passed to provider.
+
+```ruby
+  basic_user "username"
+  basic_pass "${password}"
 ```
 
 ## Similar tools
