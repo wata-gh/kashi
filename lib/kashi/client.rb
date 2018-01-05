@@ -138,7 +138,7 @@ module Kashi
       end
 
       # API access
-      tests = client.tests(method: :get)
+      tests = client.tests
       tests_by_id = tests.each_with_object({}) do |test, hash|
         # API access
         hash[test['TestID']] = client.tests_details(TestID: test['TestID'])
