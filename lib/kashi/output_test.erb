@@ -57,6 +57,9 @@ cake do
     use_jar <%= test['UseJar'].inspect %>
     <%- end -%>
     follow_redirect <%= test['FollowRedirect'] ? 1 : 0 %>
+    <%- if test['FinalEndpoint'] -%>
+    final_endpoint <%= test['FinalEndpoint'].inspect %>
+    <%- end -%>
     custom_header(
       <%= (test['CustomHeader'] == '' ? '' : JSON.parse(test['CustomHeader'])).inspect %>
     )
