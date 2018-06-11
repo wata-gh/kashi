@@ -1,3 +1,4 @@
+require 'colorize'
 require 'ostruct'
 require 'kashi/secret_expander'
 
@@ -53,7 +54,7 @@ module Kashi
         end
 
         def create
-          Kashi.logger.info("Create Test `#{website_name}`")
+          Kashi.logger.info("Create Test `#{website_name}`".colorize(:green))
           Kashi.logger.debug(create_params)
           return { 'Success' => true } if @options[:dry_run]
 
@@ -104,7 +105,7 @@ module Kashi
 
         def modify
           return unless updated?
-          Kashi.logger.info("Modify Test `#{website_name}` #{test_id}")
+          Kashi.logger.info("Modify Test `#{website_name}` #{test_id}".colorize(:blue))
           masked_dsl_has = dsl_hash.dup.tap do |h|
             h[:basic_pass] = '****' if h[:basic_pass] != ''
           end

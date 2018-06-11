@@ -1,3 +1,4 @@
+require 'colorize'
 require 'json'
 require 'kashi'
 require 'kashi/converter'
@@ -47,7 +48,7 @@ module Kashi
       # delete
       sc_contact_groups_by_name.each do |name, sc_contact_groups|
         sc_contact_groups.each do |sc_contact_group|
-          Kashi.logger.info("Delete ContactGroup `#{name}` #{sc_contact_group['ContactID']}")
+          Kashi.logger.info("Delete ContactGroup `#{name}` #{sc_contact_group['ContactID']}".colorize(:red))
           next if @options[:dry_run]
           client.contactgroups_update(method: :delete, ContactID: sc_contact_group['ContactID'])
         end
@@ -96,7 +97,7 @@ module Kashi
       # delete
       sc_tests_by_name.each do |name, sc_tests|
         sc_tests.each do |sc_test|
-          Kashi.logger.info("Delete Test `#{name}` #{sc_test['TestID']}")
+          Kashi.logger.info("Delete Test `#{name}` #{sc_test['TestID']}".colorize(:red))
           next if @options[:dry_run]
           client.tests_details(method: :delete, TestID: sc_test['TestID'])
         end
