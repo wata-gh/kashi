@@ -154,10 +154,10 @@ module Kashi
         @result.node_locations = ['']
         @result.status_codes = []
         @result.virus = ''
+        @result.final_endpoint = ''
 
         # not used
         @result.post_raw = ''
-        @result.final_endpoint = ''
 
         instance_eval(&block)
       end
@@ -289,6 +289,10 @@ module Kashi
 
       def follow_redirect(follow_redirect)
         @result.follow_redirect = follow_redirect
+      end
+
+      def final_endpoint(endpoint)
+        @result.final_endpoint = endpoint
       end
     end
   end
