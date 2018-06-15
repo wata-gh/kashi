@@ -88,6 +88,7 @@ cake do
     find_string ""
     do_not_find 0
     follow_redirect 1
+    final_endpoint ""
     custom_header(
       {"Host"=>"example.com"}
     )
