@@ -1,3 +1,4 @@
+require 'colorize'
 require 'kashi/utils'
 require 'kashi/client_wrapper'
 
@@ -36,7 +37,7 @@ module Kashi
         end
 
         def create
-          Kashi.logger.info("Create ContactGroup `#{group_name}`")
+          Kashi.logger.info("Create ContactGroup `#{group_name}`".colorize(:green))
           Kashi.logger.debug(create_params)
           return { 'Success' => true } if @options[:dry_run]
 
@@ -69,7 +70,7 @@ module Kashi
 
         def modify
           return unless updated?
-          Kashi.logger.info("Modify ContactGroup `#{group_name}` #{contact_id}")
+          Kashi.logger.info("Modify ContactGroup `#{group_name}` #{contact_id}".colorize(:blue))
           Kashi.logger.info("<diff>\n#{Kashi::Utils.diff(sc_hash, dsl_hash, color: @options[:color])}")
           Kashi.logger.debug(modify_params)
           return if @options[:dry_run]
